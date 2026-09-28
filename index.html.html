@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Service Goat">
+<title>Service Goat</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0f1115;color:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+main{max-width:760px;margin:auto;padding:20px 16px 40px}.sub{color:#aab2bf}h1{margin:0 0 5px}
+.card{background:#191d24;border:1px solid #303641;border-radius:16px;padding:16px;margin:14px 0}
+.grid,.results{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{display:flex;flex-direction:column;gap:6px;color:#c6ccd6;font-size:13px}
+input{height:48px;border-radius:10px;border:1px solid #3b4350;background:#101319;color:#fff;font-size:18px;padding:0 12px}
+button{width:100%;height:52px;border:0;border-radius:12px;background:#fff;color:#111;font-size:17px;font-weight:800;margin-top:14px}
+.metric{background:#101319;border:1px solid #303641;border-radius:12px;padding:14px}.metric span{display:block;color:#aab2bf;font-size:12px;margin-bottom:7px}.metric strong{font-size:24px}
+.row{display:grid;grid-template-columns:1fr 145px 75px;gap:8px;align-items:center;padding:13px 0;border-bottom:1px solid #303641}.row strong:last-child{text-align:right}.status{text-align:center;color:#7ee7d1;min-height:20px;margin-top:8px}
+@media(max-width:520px){.grid,.results{grid-template-columns:1fr}.row{grid-template-columns:1fr 105px 65px}}
+</style>
+</head>
+<body><main>
+<h1>Service Goat</h1><p class="sub">Daily pitching calculator</p>
+<section class="card"><div class="grid">
+<label>Scheduled<input id="scheduled" type="number" min="0" value="0"></label>
+<label>Not Run Late<input id="notRunLate" type="number" min="0" value="0"></label>
+<label>Not Demo Salesman<input id="notDemoSalesman" type="number" min="0" value="0"></label>
+<label>Not Demo Marketing<input id="notDemoMarketing" type="number" min="0" value="0"></label>
+<label>One Leg<input id="oneLeg" type="number" min="0" value="0"></label>
+<label>Not Run Salesman Issue<input id="notRunSalesmanIssue" type="number" min="0" value="0"></label>
+<label>Not Run Excused<input id="notRunExcused" type="number" min="0" value="0"></label>
+<label>Grant Lead<input id="grantLead" type="number" min="0" value="0"></label>
+<label>No Show<input id="noShow" type="number" min="0" value="0"></label>
+<label>Redzone<input id="redzone" type="number" min="0" value="0"></label>
+<label>Closed Won<input id="closedWon" type="number" min="0" value="0"></label>
+<label>Closed Lost<input id="closedLost" type="number" min="0" value="0"></label>
+<label>Canceled<input id="canceled" type="number" min="0" value="0"></label>
+</div><button onclick="calc()">Calculate</button><button onclick="resetAll()">Reset All Fields</button><div id="status" class="status"></div></section>
+
+<section class="card"><h2>Daily Breakdown</h2><div class="results">
+<div class="metric"><span>Overall Total</span><strong id="overall">0</strong></div>
+<div class="metric"><span>Sales Pitched Total</span><strong id="salesPitched">0</strong></div>
+<div class="metric"><span>Sales Pitching Percentage</span><strong id="salesPct">0.00%</strong></div>
+<div class="metric"><span>Service Pitched Total</span><strong id="servicePitched">0</strong></div>
+<div class="metric"><span>Service Pitching Percentage</span><strong id="servicePct">0.00%</strong></div>
+</div></section>
+
+<section class="card"><h2>No Pitch Breakdown</h2><p class="sub">Share of Total No Pitch</p>
+<div id="breakdown"></div><button onclick="makeScreenshot()">Generate Screenshot</button>
+<div id="photo" style="display:none;margin-top:12px"><img id="shot" style="width:100%;border-radius:12px"><div class="status">Press and hold the image to save it.</div></div>
+</section></main>
+<script>
+const ids=["scheduled","notRunLate","notDemoSalesman","notDemoMarketing","oneLeg","notRunSalesmanIssue","notRunExcused","grantLead","noShow","redzone","closedWon","closedLost","canceled"];
+const np=["notRunLate","notDemoSalesman","notDemoMarketing","oneLeg","notRunSalesmanIssue","notRunExcused","grantLead"];
+const label={notRunLate:"Not Run Late",notDemoSalesman:"Not Demo Salesman",notDemoMarketing:"Not Demo Marketing",oneLeg:"One Leg",notRunSalesmanIssue:"Not Run Salesman Issue",notRunExcused:"Not Run Excused",grantLead:"Grant Lead"};
+const v=id=>Math.max(0,Number(document.getElementById(id).value)||0);
+const fmt=x=>x.toFixed(2)+"%";
+function calc(){
+ let total=ids.reduce((a,id)=>a+v(id),0);
+ let sales=Math.max(0,total-np.reduce((a,id)=>a+v(id),0)-v("noShow")-v("canceled"));
+ let service=Math.max(0,total-v("notDemoMarketing")-v("notRunExcused")-v("grantLead")-v("noShow")-v("canceled"));
+ overall.textContent=total;salesPitched.textContent=sales;salesPct.textContent=fmt(total?sales/total*100:0);
+ servicePitched.textContent=service;servicePct.textContent=fmt(service?sales/service*100:0);
+ let nt=np.reduce((a,id)=>a+v(id),0);
+ breakdown.innerHTML=np.map(id=>`<div class="row"><span>${label[id]}</span><strong>${v(id)} ${v(id)==1?"appointment":"appointments"}</strong><strong>${fmt(nt?v(id)/nt*100:0)}</strong></div>`).join("")+
+ `<div class="row"><strong>Total No Pitch</strong><strong>${nt} ${nt==1?"appointment":"appointments"}</strong><strong>${nt?"100.00%":"0.00%"}</strong></div>`;
+ status.textContent="Calculated.";setTimeout(()=>status.textContent="",1200);
+}
+function resetAll(){ids.forEach(id=>document.getElementById(id).value=0);document.getElementById("photo").style.display="none";calc();status.textContent="All fields reset.";setTimeout(()=>status.textContent="",1200)}
+function makeScreenshot(){
+ calc();let c=document.createElement("canvas"),ctx=c.getContext("2d"),S=2,W=1200,H=1040;c.width=W*S;c.height=H*S;ctx.scale(S,S);
+ ctx.fillStyle="#101319";ctx.fillRect(0,0,W,H);ctx.fillStyle="#fff";ctx.font="700 34px Arial";ctx.fillText("Daily Pitching Breakdown",60,65);
+ ctx.fillStyle="#aab2bf";ctx.font="16px Arial";ctx.fillText("Calculated results • "+new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}),60,94);
+ let cards=[["Overall Total",overall.textContent],["Sales Pitched Total",salesPitched.textContent],["Sales Pitching Percentage",salesPct.textContent],["Service Pitched Total",servicePitched.textContent],["Service Pitching Percentage",servicePct.textContent]];
+ cards.forEach((a,i)=>{let x=60+i*218;ctx.fillStyle="#191d24";ctx.fillRect(x,125,204,105);ctx.fillStyle="#aab2bf";ctx.font="13px Arial";ctx.fillText(a[0],x+14,153);ctx.fillStyle="#fff";ctx.font="700 24px Arial";ctx.fillText(a[1],x+14,195)});
+ ctx.fillStyle="#fff";ctx.font="700 25px Arial";ctx.fillText("Daily Appointment Exceptions",60,280);ctx.fillStyle="#aab2bf";ctx.font="15px Arial";ctx.fillText("No Show: "+v("noShow")+"   •   Canceled: "+v("canceled"),60,310);
+ ctx.fillStyle="#fff";ctx.font="700 25px Arial";ctx.fillText("No Pitch Breakdown",60,390);let nt=np.reduce((a,id)=>a+v(id),0),y=435;
+ np.forEach(id=>{ctx.fillStyle="#fff";ctx.font="17px Arial";ctx.fillText(label[id],60,y);ctx.fillStyle="#aab2bf";ctx.fillText(v(id)+" appointments",560,y);ctx.fillStyle="#7ee7d1";ctx.textAlign="right";ctx.fillText(fmt(nt?v(id)/nt*100:0),1140,y);ctx.textAlign="left";y+=55});
+ ctx.fillStyle="#191d24";ctx.fillRect(40,y-20,1120,75);ctx.fillStyle="#fff";ctx.font="700 20px Arial";ctx.fillText("Total No Pitch",60,y+12);ctx.fillStyle="#7ee7d1";ctx.textAlign="right";ctx.fillText(nt?"100.00%":"0.00%",1140,y+12);
+ document.getElementById("shot").src=c.toDataURL("image/png");document.getElementById("photo").style.display="block";
+}
+calc();
+</script></body></html>
